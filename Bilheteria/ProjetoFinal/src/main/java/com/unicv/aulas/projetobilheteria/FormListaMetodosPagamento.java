@@ -4,22 +4,22 @@
  */
 package com.unicv.aulas.projetobilheteria;
 
-
+import com.unicv.aulas.projetobilheteria.classes.Estado;
 import com.unicv.aulas.projetobilheteria.classes.MetodoPagamento;
-import java.io.IOException;
+import java.io.StringReader;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.ArrayList;
 import javax.swing.table.DefaultTableModel;
-import org.json.JSONArray;
-import org.json.JSONObject;
+import javax.swing.JOptionPane;
+import javax.json.Json;
+import javax.json.JsonArray;
+import javax.json.JsonObject;
+import javax.json.JsonReader;
+import javax.swing.table.DefaultTableModel;
 
-
-
-// 20240601205245
-// https://api-eventos-unicv.azurewebsites.net/api/metodos-pagamento
 
 /**
  *
@@ -35,41 +35,51 @@ public class FormListaMetodosPagamento extends javax.swing.JFrame {
     }
 
     private ArrayList<MetodoPagamento> carregarLinhas() {
-        ArrayList<MetodoPagamento> minhaLista = new ArrayList<>();
+         HttpClient client = HttpClient.newHttpClient();
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create("https://api-eventos-unicv.azurewebsites.net/api/metodos-pagamento"))
+                .GET()
+                .build();
+      ArrayList<MetodoPagamento> listaMetodoPagamento = new ArrayList<MetodoPagamento>();
         
-        try {   
-            // Cria um cliente HTTP
-            HttpClient client = HttpClient.newHttpClient();
-            // Cria a requisição HTTP GET
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create("https://api-eventos-unicv.azurewebsites.net/api/metodos-pagamento"))
-                    .build();
-            
-            // Envia a requisição e obtém a resposta
+        try {
+            // Chamar a API para trazer os dados
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-            
-            // Processa a resposta JSON
-            JSONArray jsonArray = new JSONArray(response.body());
-            for (int i = 0; i < jsonArray.length(); i++) {
-                JSONObject jsonObject = jsonArray.getJSONObject(i);
-                int id = jsonObject.getInt("id");
-                String nome = jsonObject.getString("nome");
-                minhaLista.add(new MetodoPagamento(id, nome));
+
+            // Verificar o código de retorno
+            if (response.statusCode() == 200) {
+                listaMetodoPagamento = parseJsonArray(response.body());
+            } else {
+                JOptionPane.showMessageDialog(null, "Erro ao listar estados");
             }
-            
-        } catch (IOException | InterruptedException e) {
+        } catch (Exception e) {
             e.printStackTrace();
-            // Em caso de erro, usar dados fixos
-            minhaLista.add(MetodoPagamento.criar(1, "PIX"));
-            minhaLista.add(MetodoPagamento.criar(2, "Débito"));
-            minhaLista.add(MetodoPagamento.criar(3, "Crédito"));
-            minhaLista.add(MetodoPagamento.criar(4, "Dinheiro"));
-            minhaLista.add(MetodoPagamento.criar(5, "Transferência"));
-            minhaLista.add(MetodoPagamento.criar(6, "Boleto"));
-            minhaLista.add(MetodoPagamento.criar(7, "Cheque"));
         }
 
-        return minhaLista;
+        return listaMetodoPagamento;
+    }
+        
+         private static ArrayList<MetodoPagamento> parseJsonArray(String jsonArrayString) {
+        ArrayList<MetodoPagamento> listaMetodoPagamento = new ArrayList<>();
+
+        // Ler os dados do response
+        JsonReader jsonReader = Json.createReader(new StringReader(jsonArrayString));
+        JsonArray jsonArray = jsonReader.readArray();
+        jsonReader.close();
+
+        // Mapear cada objeto para a classe Estado
+        for (int i = 0; i < jsonArray.size(); i++) {
+            JsonObject json = jsonArray.getJsonObject(i);
+            MetodoPagamento objMetodoPagamento = new MetodoPagamento();
+            objMetodoPagamento.id = json.getInt("id");
+            objMetodoPagamento.nome = json.getString("name");
+       
+
+            // Adiciono o retorno na lista
+            listaMetodoPagamento.add(objMetodoPagamento);
+        }
+
+        return listaMetodoPagamento;
     }
 
     /**

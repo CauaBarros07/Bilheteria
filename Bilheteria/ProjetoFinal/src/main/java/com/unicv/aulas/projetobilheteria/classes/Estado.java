@@ -1,3 +1,7 @@
+/*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
+ */
 package com.unicv.aulas.projetobilheteria.classes;
 
 /**
@@ -8,14 +12,4 @@ public class Estado {
     public int id;
     public String sigla;
     public String nome;
-
-    public Estado(int id, String nome, String sigla) {
-        this.id = id;
-        this.nome = nome;
-        this.sigla = sigla;
-    }
-
-    public static Estado criar(int pId, String pNome, String pSigla){
-        return new Estado(pId, pNome, pSigla);
-    }
 }

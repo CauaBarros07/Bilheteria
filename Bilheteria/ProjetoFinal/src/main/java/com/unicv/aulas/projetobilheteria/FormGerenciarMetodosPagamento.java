@@ -13,18 +13,13 @@ import com.unicv.aulas.projetobilheteria.classes.MetodoPagamento;
 public class FormGerenciarMetodosPagamento extends javax.swing.JFrame {
 
     private MetodoPagamento dados;
-    private int id; // Defina a variável id
-    private String nome; // Defina a variável nom
     /**
      * Creates new form FormGerenciarMetodosPagamento
      */
     public FormGerenciarMetodosPagamento() {
-        this.id = 1; // Exemplo: inicialize com um valor de id apropriado
-        this.nome = "Exemplo"; // Exemplo: inicialize com um valor de nome apropriado
-        
         initComponents();
         
-        dados = new MetodoPagamento(id, nome);
+        dados = new MetodoPagamento();
     }
 
     /**

@@ -5,71 +5,84 @@
 package com.unicv.aulas.projetobilheteria;
 
 import com.unicv.aulas.projetobilheteria.classes.Estado;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
+import java.io.StringReader;
+import java.net.URI;
 import java.net.URL;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.ArrayList;
+import java.util.List;
+import javax.swing.JOptionPane;
+import javax.json.Json;
+import javax.json.JsonArray;
+import javax.json.JsonObject;
+import javax.json.JsonReader;
 import javax.swing.table.DefaultTableModel;
-import org.json.JSONArray;
-import org.json.JSONObject;
+
 /**
  *
  * @author pedro
  */
 public class FormListaEstados extends javax.swing.JFrame {
-    
+
     public ArrayList<Estado> linhas = null;
-    
+
     public FormListaEstados() {
         this.linhas = carregarLinhas();
         initComponents();
     }
 
-     private ArrayList<Estado> carregarLinhas() {
-    ArrayList<Estado> minhaLista = new ArrayList<>();
-    try {
-        URL url = new URL("https://api-eventos-unicv.azurewebsites.net/api/estados");
-        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-        conn.setRequestMethod("GET");
+    private ArrayList<Estado> carregarLinhas() {
+        // Configurando a requisição básica
+        HttpClient client = HttpClient.newHttpClient();
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create("https://api-eventos-unicv.azurewebsites.net/api/estados"))
+                .GET()
+                .build();
+        
+        // declarando a lista de estados
+        ArrayList<Estado> listaEstados = new ArrayList<Estado>();
+        
+        try {
+            // Chamar a API para trazer os dados
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
-        int responseCode = conn.getResponseCode();
-        if (responseCode == HttpURLConnection.HTTP_OK) {
-            BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-            String inputLine;
-            StringBuilder response = new StringBuilder();
-
-            while ((inputLine = in.readLine()) != null) {
-                response.append(inputLine);
+            // Verificar o código de retorno
+            if (response.statusCode() == 200) {
+                listaEstados = parseJsonArray(response.body());
+            } else {
+                JOptionPane.showMessageDialog(null, "Erro ao listar estados");
             }
-            in.close();
-
-            System.out.println("Response from API: " + response.toString()); // Log da resposta da API
-
-            JSONArray jsonArray = new JSONArray(response.toString());
-            for (int i = 0; i < jsonArray.length(); i++) {
-                JSONObject jsonObj = jsonArray.getJSONObject(i);
-                System.out.println("JSON Object: " + jsonObj.toString()); // Log do objeto JSON
-
-                int id = jsonObj.optInt("id", -1); // Usar optInt para evitar exceções
-                String nome = jsonObj.optString("name", ""); // Usar optString para evitar exceções
-                String sigla = jsonObj.optString("acronym", ""); // Usar optString para evitar exceções
-
-                if (id != -1 && !nome.isEmpty() && !sigla.isEmpty()) {
-                    minhaLista.add(new Estado(id, nome, sigla));
-                } else {
-                    System.out.println("Missing fields in JSON object: " + jsonObj.toString());
-                }
-            }
-        } else {
-            System.out.println("GET request not worked");
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-    } catch (Exception e) {
-        e.printStackTrace();
-    }
-    return minhaLista;
-}
 
+        return listaEstados;
+    }
+
+    private static ArrayList<Estado> parseJsonArray(String jsonArrayString) {
+        ArrayList<Estado> listaEstados = new ArrayList<>();
+
+        // Ler os dados do response
+        JsonReader jsonReader = Json.createReader(new StringReader(jsonArrayString));
+        JsonArray jsonArray = jsonReader.readArray();
+        jsonReader.close();
+
+        // Mapear cada objeto para a classe Estado
+        for (int i = 0; i < jsonArray.size(); i++) {
+            JsonObject json = jsonArray.getJsonObject(i);
+            Estado objEstado = new Estado();
+            objEstado.id = json.getInt("id");
+            objEstado.nome = json.getString("name");
+            objEstado.sigla = json.getString("acronym");
+
+            // Adiciono o retorno na lista
+            listaEstados.add(objEstado);
+        }
+
+        return listaEstados;
+    }
 
     /**
      * This method is called from within the constructor to initialize the form.
@@ -83,10 +96,15 @@ public class FormListaEstados extends javax.swing.JFrame {
         jButton1 = new javax.swing.JButton();
         jPanel1 = new javax.swing.JPanel();
         jScrollPane1 = new javax.swing.JScrollPane();
-        jTable1 = new javax.swing.JTable();
+        tabelaDados = new javax.swing.JTable();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("Lista de Estados");
+        addWindowListener(new java.awt.event.WindowAdapter() {
+            public void windowOpened(java.awt.event.WindowEvent evt) {
+                formWindowOpened(evt);
+            }
+        });
 
         jButton1.setText("Novo");
         jButton1.addActionListener(new java.awt.event.ActionListener() {
@@ -97,7 +115,7 @@ public class FormListaEstados extends javax.swing.JFrame {
 
         jPanel1.setBorder(javax.swing.BorderFactory.createTitledBorder("Itens cadastrados"));
 
-        jTable1.setModel(new javax.swing.table.DefaultTableModel(
+        tabelaDados.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
                 {null, null, null, null},
                 {null, null, null, null},
@@ -108,7 +126,7 @@ public class FormListaEstados extends javax.swing.JFrame {
                 "Title 1", "Title 2", "Title 3", "Title 4"
             }
         ));
-        jScrollPane1.setViewportView(jTable1);
+        jScrollPane1.setViewportView(tabelaDados);
 
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
@@ -155,6 +173,21 @@ public class FormListaEstados extends javax.swing.JFrame {
         form.setVisible(true);
     }//GEN-LAST:event_jButton1ActionPerformed
 
+    private void formWindowOpened(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowOpened
+        // TODO add your handling code here:
+        DefaultTableModel modelo = new DefaultTableModel();
+        modelo.addColumn("id");
+        modelo.addColumn("nome");
+        modelo.addColumn("sigla");
+
+        // popular o modelo de dados [linhas]
+        for (Estado estado : linhas) {
+            modelo.addRow(new Object[]{estado.id, estado.nome, estado.sigla});
+        }
+
+        this.tabelaDados.setModel(modelo);
+    }//GEN-LAST:event_formWindowOpened
+
     /**
      * @param args the command line arguments
      */
@@ -194,6 +227,6 @@ public class FormListaEstados extends javax.swing.JFrame {
     private javax.swing.JButton jButton1;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JScrollPane jScrollPane1;
-    private javax.swing.JTable jTable1;
+    private javax.swing.JTable tabelaDados;
     // End of variables declaration//GEN-END:variables
 }
