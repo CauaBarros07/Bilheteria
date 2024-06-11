@@ -4,6 +4,7 @@
  */
 package com.unicv.aulas.projetobilheteria.classes;
 
+
 /**
  *
  * @author pedro
@@ -12,4 +13,6 @@ public class Estado {
     public int id;
     public String sigla;
     public String nome;
+    
 }
+ 

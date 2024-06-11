@@ -5,7 +5,11 @@
 package com.unicv.aulas.projetobilheteria;
 
 import com.unicv.aulas.projetobilheteria.classes.Estado;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.StringReader;
+import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
 import java.net.http.HttpClient;
@@ -19,6 +23,7 @@ import javax.json.JsonArray;
 import javax.json.JsonObject;
 import javax.json.JsonReader;
 import javax.swing.table.DefaultTableModel;
+
 
 /**
  *
@@ -60,6 +65,8 @@ public class FormListaEstados extends javax.swing.JFrame {
 
         return listaEstados;
     }
+    
+ 
 
     private static ArrayList<Estado> parseJsonArray(String jsonArrayString) {
         ArrayList<Estado> listaEstados = new ArrayList<>();
@@ -83,6 +90,9 @@ public class FormListaEstados extends javax.swing.JFrame {
 
         return listaEstados;
     }
+    
+    
+    
 
     /**
      * This method is called from within the constructor to initialize the form.
@@ -229,4 +239,5 @@ public class FormListaEstados extends javax.swing.JFrame {
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JTable tabelaDados;
     // End of variables declaration//GEN-END:variables
+
 }

@@ -3,7 +3,23 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JFrame.java to edit this template
  */
 package com.unicv.aulas.projetobilheteria;
-
+import com.unicv.aulas.projetobilheteria.classes.Estado;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.StringReader;
+import java.net.HttpURLConnection;
+import java.net.URI;
+import java.net.URL;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import javax.swing.JOptionPane;
+import javax.json.Json;
+import javax.json.JsonArray;
+import javax.json.JsonObject;
+import javax.json.JsonReader;
+import javax.swing.table.DefaultTableModel;
 /**
  *
  * @author pedro
@@ -40,8 +56,18 @@ public class FormGerenciarEstados extends javax.swing.JFrame {
         setTitle("Gerenciar Estados");
 
         jButton1.setText("Fechar");
+        jButton1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton1ActionPerformed(evt);
+            }
+        });
 
         jButton2.setText("Salvar");
+        jButton2.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton2ActionPerformed(evt);
+            }
+        });
 
         jPanel1.setBorder(javax.swing.BorderFactory.createTitledBorder("Dados"));
 
@@ -120,15 +146,92 @@ public class FormGerenciarEstados extends javax.swing.JFrame {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
-    /**
-     * @param args the command line arguments
-     */
+    private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
+       // Pegando os valores digitados nos campos de texto
+        String sigla = textSigla.getText();
+        String nome = textNome.getText();
+
+        // Verificando se a sigla e o nome estão vazios
+        if (sigla.isEmpty() || nome.isEmpty()) {
+            // Exibir mensagem de erro e não salvar
+            JOptionPane.showMessageDialog(this, "A sigla e o nome não podem estar vazios.");
+            return;
+        }
+
+        // Verificando se a sigla possui exatamente 2 caracteres e são letras
+        if (sigla.length() != 2 || !sigla.matches("[a-zA-Z]+")) {
+            // Exibir mensagem de erro e não salvar
+            JOptionPane.showMessageDialog(this, "A sigla deve ter exatamente 2 letras.");
+            return;
+        }
+
+        
+        // Exibindo os valores no console
+        System.out.println("Sigla: " + sigla + "\nNome: " + nome);
+
+        // Enviando o estado para a API
+        adicionarEstado(sigla, nome);
+
+        var form = new FormListaEstados();
+        form.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+        form.setVisible(true);
+
+        System.out.println("OnclickSalvar");
+        this.dispose(); // Fechar
+    
+    }//GEN-LAST:event_jButton2ActionPerformed
+
+    private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
+         // TODO add your handling code here:
+
+        var form = new FormListaEstados();
+        form.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+        form.setVisible(true);
+
+        System.out.println("OnclickFechar");
+
+        this.dispose(); // Fechar
+
+    }//GEN-LAST:event_jButton1ActionPerformed
+
+    public void adicionarEstado(String sigla, String nome) {
+    try {
+        // Construir o JSON com os dados do novo estado
+        JsonObject estadoJson = Json.createObjectBuilder()
+                .add("Name", nome)
+                .add("Acronym", sigla)
+                .build();
+
+        // Criar o cliente HTTP
+        HttpClient client = HttpClient.newHttpClient();
+
+        // Construir a requisição HTTP PUT
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create("https://api-eventos-unicv.azurewebsites.net/api/estados"))
+                .header("Content-Type", "application/json")
+                .PUT(HttpRequest.BodyPublishers.ofString(estadoJson.toString()))
+                .build();
+
+        // Enviar a requisição e capturar a resposta
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+        // Verificar o código de resposta
+        if (response.statusCode() == 200) {
+            // Estado adicionado com sucesso
+            JOptionPane.showMessageDialog(this, "Estado adicionado com sucesso!");
+        } else {
+            // Exibir mensagem de erro se a resposta não for bem-sucedida
+            JOptionPane.showMessageDialog(this, "Erro ao adicionar estado: " + response.body());
+        }
+    } catch (Exception e) {
+        // Capturar e tratar exceções
+        JOptionPane.showMessageDialog(this, "Erro ao comunicar com a API: " + e.getMessage());
+        e.printStackTrace(); // Isso pode ser alterado para um tratamento mais adequado de exceções
+    }
+    }
+
+
     public static void main(String args[]) {
-        /* Set the Nimbus look and feel */
-        //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
-        /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
-         * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
-         */
         try {
             for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
                 if ("Nimbus".equals(info.getName())) {
@@ -145,15 +248,14 @@ public class FormGerenciarEstados extends javax.swing.JFrame {
         } catch (javax.swing.UnsupportedLookAndFeelException ex) {
             java.util.logging.Logger.getLogger(FormGerenciarEstados.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
-        //</editor-fold>
 
-        /* Create and display the form */
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
                 new FormGerenciarEstados().setVisible(true);
             }
         });
     }
+   
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton jButton1;
