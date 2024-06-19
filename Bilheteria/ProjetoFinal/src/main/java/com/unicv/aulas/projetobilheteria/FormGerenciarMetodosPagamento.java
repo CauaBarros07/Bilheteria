@@ -5,6 +5,14 @@
 package com.unicv.aulas.projetobilheteria;
 
 import com.unicv.aulas.projetobilheteria.classes.MetodoPagamento;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import javax.json.Json;
+import javax.json.JsonObject;
+import javax.swing.JOptionPane;
+import static javax.swing.WindowConstants.DISPOSE_ON_CLOSE;
 
 /**
  *
@@ -13,6 +21,8 @@ import com.unicv.aulas.projetobilheteria.classes.MetodoPagamento;
 public class FormGerenciarMetodosPagamento extends javax.swing.JFrame {
 
     private MetodoPagamento dados;
+    private int id;
+    private FormListaMetodosPagamento formPai;
     /**
      * Creates new form FormGerenciarMetodosPagamento
      */
@@ -20,6 +30,18 @@ public class FormGerenciarMetodosPagamento extends javax.swing.JFrame {
         initComponents();
         
         dados = new MetodoPagamento();
+    }
+    
+    public void setConfiguracoes(int id, FormListaMetodosPagamento pai) {
+        this.id = id;
+        this.formPai = pai;
+    }
+
+    public void carregarDados() {
+        this.textNome.setText("Texto");
+       
+        
+        // chama a api aqui para carregar os dados do estado
     }
 
     /**
@@ -126,33 +148,121 @@ public class FormGerenciarMetodosPagamento extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
-        // mapear os dados da tela
-        dados.nome = textNome.getText();
+          // Pegando os valores digitados nos campos de texto
+        String nome = textNome.getText();
+
+        // Verificando se a sigla e o nome estão vazios
+        if (nome.isEmpty()) {
+            // Exibir mensagem de erro e não salvar
+            JOptionPane.showMessageDialog(this, "A sigla e o nome não podem estar vazios.");
+            return;
+        }
+
+        // Verificando se a sigla possui exatamente 2 caracteres e são letras
         
-        // decidir o que fazer
-        if (dados.id == 0){
-            // criar um registro novo
-            // Api - POST
-        }
-        else {
-            // atualizar um registro
-            // Api - PUT
-        }
+        // Exibindo os valores no console
+        System.out.println("\nNome: " + nome);
+
+        // Enviando o estado para a API
+         if (id == 0){
+        adicionarMetodosPagamento(nome);
+         System.out.println("POST"); // chamar a API de POST
+         } else{
+            editarMetodosPagamento(nome); 
+             System.out.println("PUT"); // chamar a API de POST
+         }
+
+        var form = new FormListaMetodosPagamento();
+        form.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+        form.setVisible(true);
+
+        System.out.println("OnclickSalvar");
+        this.dispose(); // Fechar
     }//GEN-LAST:event_jButton2ActionPerformed
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
-        setVisible(false);
+         var form = new FormListaMetodosPagamento();
+        form.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+        form.setVisible(true);
+
+        System.out.println("OnclickFechar");
+
+        this.dispose(); // Fechar
     }//GEN-LAST:event_jButton1ActionPerformed
 
-    /**
-     * @param args the command line arguments
-     */
+   
+    public void adicionarMetodosPagamento(String nome) {
+    try {
+        // Construir o JSON com os dados do novo estado
+        JsonObject metodopagamentoJson = Json.createObjectBuilder()
+                .add("Name", nome)
+                .build();
+
+        // Criar o cliente HTTP
+        HttpClient client = HttpClient.newHttpClient();
+
+        // Construir a requisição HTTP PUT
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create("https://api-eventos-unicv.azurewebsites.net/api/metodos-pagamento"))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString( metodopagamentoJson.toString()))
+                .build();
+
+        // Enviar a requisição e capturar a resposta
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+        // Verificar o código de resposta
+        if (response.statusCode() == 200) {
+            // Estado adicionado com sucesso
+            JOptionPane.showMessageDialog(this, "Estado adicionado com sucesso!");
+        } else {
+            // Exibir mensagem de erro se a resposta não for bem-sucedida
+            JOptionPane.showMessageDialog(this, "Erro ao adicionar metodos de pagamento: " + response.body());
+        }
+    } catch (Exception e) {
+        // Capturar e tratar exceções
+        JOptionPane.showMessageDialog(this, "Erro ao comunicar com a API: " + e.getMessage());
+        e.printStackTrace(); // Isso pode ser alterado para um tratamento mais adequado de exceções
+    }
+    }
+     public void editarMetodosPagamento(String nome) {
+    try {
+        // Construir o JSON com os dados do novo estado
+        JsonObject estadoJson = Json.createObjectBuilder()
+                .add("Name", nome)
+                .build();
+
+        // Criar o cliente HTTP
+        HttpClient client = HttpClient.newHttpClient();
+
+        // Construir a requisição HTTP PUT
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create("https://api-eventos-unicv.azurewebsites.net/api/metodos-pagamento"))
+                .header("Content-Type", "application/json")
+                .PUT(HttpRequest.BodyPublishers.ofString(estadoJson.toString()))
+                .build();
+
+        // Enviar a requisição e capturar a resposta
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+        // Verificar o código de resposta
+        if (response.statusCode() == 200) {
+            // Estado adicionado com sucesso
+            JOptionPane.showMessageDialog(this, "Estado editado com sucesso!");
+        } else {
+            // Exibir mensagem de erro se a resposta não for bem-sucedida
+            JOptionPane.showMessageDialog(this, "Erro ao editado metodos de pagamento: " + response.body());
+        }
+    } catch (Exception e) {
+        // Capturar e tratar exceções
+        JOptionPane.showMessageDialog(this, "Erro ao comunicar com a API: " + e.getMessage());
+        e.printStackTrace(); // Isso pode ser alterado para um tratamento mais adequado de exceções
+    }
+    }
+    
+
+
     public static void main(String args[]) {
-        /* Set the Nimbus look and feel */
-        //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
-        /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
-         * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
-         */
         try {
             for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
                 if ("Nimbus".equals(info.getName())) {
@@ -169,15 +279,15 @@ public class FormGerenciarMetodosPagamento extends javax.swing.JFrame {
         } catch (javax.swing.UnsupportedLookAndFeelException ex) {
             java.util.logging.Logger.getLogger(FormGerenciarMetodosPagamento.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
-        //</editor-fold>
-
-        /* Create and display the form */
-        java.awt.EventQueue.invokeLater(new Runnable() {
+    
+    java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
                 new FormGerenciarMetodosPagamento().setVisible(true);
             }
         });
     }
+    
+    
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton jButton1;

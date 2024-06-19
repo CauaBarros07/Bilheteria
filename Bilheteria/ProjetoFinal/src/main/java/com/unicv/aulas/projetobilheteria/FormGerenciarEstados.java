@@ -14,6 +14,7 @@ import java.net.URL;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.ArrayList;
 import javax.swing.JOptionPane;
 import javax.json.Json;
 import javax.json.JsonArray;
@@ -26,11 +27,65 @@ import javax.swing.table.DefaultTableModel;
  */
 public class FormGerenciarEstados extends javax.swing.JFrame {
 
-    /**
-     * Creates new form FormGerenciarEstados
-     */
+    private int id;
+    private FormListaEstados formPai;
+    
     public FormGerenciarEstados() {
         initComponents();
+    }
+     public void setConfiguracoes(int id, FormListaEstados pai) {
+        this.id = id;
+        this.formPai = pai;
+    }
+
+    public void carregarDados() {   
+        
+     // Configurando a requisição básica
+    HttpClient client = HttpClient.newHttpClient();
+    HttpRequest request = HttpRequest.newBuilder()
+            .uri(URI.create("https://api-eventos-unicv.azurewebsites.net/api/estados"))
+            .GET()
+            .build();
+
+    // declarando a lista de estados
+    ArrayList<Estado> FormListaEstados = new ArrayList<Estado>();
+
+    try {
+        // Chamar a API para trazer os dados
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+        // Verificar o código de retorno
+        if (response.statusCode() == 200) {
+            FormListaEstados = parseJsonArray(response.body());
+        } else {
+            JOptionPane.showMessageDialog(null, "Erro ao listar estados");
+        }
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
+    
+    }
+     private static ArrayList<Estado> parseJsonArray(String jsonArrayString) {
+        ArrayList<Estado> listaEstados = new ArrayList<>();
+
+        // Ler os dados do response
+        JsonReader jsonReader = Json.createReader(new StringReader(jsonArrayString));
+        JsonArray jsonArray = jsonReader.readArray();
+        jsonReader.close();
+
+        // Mapear cada objeto para a classe Estado
+        for (int i = 0; i < jsonArray.size(); i++) {
+            JsonObject json = jsonArray.getJsonObject(i);
+            Estado objEstado = new Estado();
+            objEstado.id = json.getInt("id");
+            objEstado.nome = json.getString("name");
+            objEstado.sigla = json.getString("acronym");
+
+            // Adiciono o retorno na lista
+            listaEstados.add(objEstado);
+        }
+
+        return listaEstados;
     }
 
     /**
@@ -164,13 +219,23 @@ public class FormGerenciarEstados extends javax.swing.JFrame {
             JOptionPane.showMessageDialog(this, "A sigla deve ter exatamente 2 letras.");
             return;
         }
+        
+        if (id == 0){
+            adicionarEstado(sigla, nome);
+            System.out.println("POST"); // chamar a API de POST
+        }
+        else{
+            editarEstado(sigla,nome);
+            System.out.println("PUT"); // chamar a API de PUT
+        }
 
         
         // Exibindo os valores no console
         System.out.println("Sigla: " + sigla + "\nNome: " + nome);
-
+         
+        
         // Enviando o estado para a API
-        adicionarEstado(sigla, nome);
+       
 
         var form = new FormListaEstados();
         form.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
@@ -209,7 +274,7 @@ public class FormGerenciarEstados extends javax.swing.JFrame {
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create("https://api-eventos-unicv.azurewebsites.net/api/estados"))
                 .header("Content-Type", "application/json")
-                .PUT(HttpRequest.BodyPublishers.ofString(estadoJson.toString()))
+                .POST(HttpRequest.BodyPublishers.ofString(estadoJson.toString()))
                 .build();
 
         // Enviar a requisição e capturar a resposta
@@ -222,6 +287,42 @@ public class FormGerenciarEstados extends javax.swing.JFrame {
         } else {
             // Exibir mensagem de erro se a resposta não for bem-sucedida
             JOptionPane.showMessageDialog(this, "Erro ao adicionar estado: " + response.body());
+        }
+    } catch (Exception e) {
+        // Capturar e tratar exceções
+        JOptionPane.showMessageDialog(this, "Erro ao comunicar com a API: " + e.getMessage());
+        e.printStackTrace(); // Isso pode ser alterado para um tratamento mais adequado de exceções
+    }
+    }
+    
+     public void editarEstado(String sigla, String nome) {
+    try {
+        // Construir o JSON com os dados do novo estado
+        JsonObject estadoJson = Json.createObjectBuilder()
+                .add("Name", nome)
+                .add("Acronym", sigla)
+                .build();
+
+        // Criar o cliente HTTP
+        HttpClient client = HttpClient.newHttpClient();
+
+        // Construir a requisição HTTP PUT
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create("https://api-eventos-unicv.azurewebsites.net/api/estados"))
+                .header("Content-Type", "application/json")
+                .PUT(HttpRequest.BodyPublishers.ofString(estadoJson.toString()))
+                .build();
+
+        // Enviar a requisição e capturar a resposta
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+        // Verificar o código de resposta
+        if (response.statusCode() == 200) {
+            // Estado adicionado com sucesso
+            JOptionPane.showMessageDialog(this, "Estado editado com sucesso!");
+        } else {
+            // Exibir mensagem de erro se a resposta não for bem-sucedida
+            JOptionPane.showMessageDialog(this, "Erro ao editar estado: " + response.body());
         }
     } catch (Exception e) {
         // Capturar e tratar exceções
